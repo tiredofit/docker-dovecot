@@ -1,0 +1,17 @@
+#!/usr/bin/with-contenv bash
+
+while [ ! -f /tmp/state/10-dovecot-init ]
+do
+  sleep 1
+done
+
+if [ ! -f /tmp/state/10-dovecot ]; then
+
+
+
+  echo 'Initialization Complete' >/tmp/state/10-Dovecot
+fi
+
+echo ''
+echo '** Starting Dovecot'
+exec dovecot -f

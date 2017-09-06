@@ -1,0 +1,25 @@
+version: '2'
+
+services:
+  
+  dovecot-app:
+    image: tiredofit/dovecot
+    container_name: dovecot-app
+    volumes:
+    - ./data:/vmail
+    - ./certs:/certs
+    - ./logs:/var/log
+    environment:
+
+    - ZABBIX_HOSTNAME=dovecot-app
+    - HOSTNAME=mail.example.com
+
+    networks:
+      - proxy-tier
+    restart: always
+
+networks:
+  proxy-tier:
+    external:
+      name: nginx-proxy
+

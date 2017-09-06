@@ -1,0 +1,186 @@
+#!/usr/bin/with-contenv bash
+
+### Set Defaults
+LOG_LEVEL=${LOG_LEVEL:-"INFO"}
+ENABLE_LDAP=${ENABLE_DOVECOT_LDAP:="FALSE"}
+LOG_FILE=${LOG_FILE:-"/var/log/dovecot.log"}
+LDAP_DEREF=${LDAP_DEFEF:-"never"}
+LDAP_SCOPE=${LDAP_SCOPE:-"subtree"}
+GREETING_TEXT=${GREETING_TEXT:-"Ready"}
+
+
+
+### Dovecot Configuration
+	function setDovecotConf {
+		KEY="$1"
+		VALUE="$2"
+		FILE="$3"
+		echo "Setting conf: $KEY=$VALUE in ($FILE)"
+		sed -i "s#^\s*$KEY\s*=.*\$#$KEY=$VALUE#g" $FILE
+	}
+
+	# Set LDAP conf: base (ex: base=dc=mail, dc=example, dc=org)
+	if [ -n "$LDAP_HOST" ]; then
+		setDovecotConf "hosts" "$LDAP_HOST" /etc/dovecot/dovecot.conf
+	fi
+
+    # Set LDAP conf: base (ex: base=dc=mail, dc=example, dc=org)
+	if [ -n "$LDAP_BASE_DN" ]; then
+		setDovecotConf "base" "$LDAP_BASE_DN" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_BIND_USER" ]; then
+		setDovecotConf "dn" "$LDAP_BIND_USER" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_BIND_PASS" ]; then
+		setDovecotConf "dnpass" "$LDAP_BIND_PASS" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ "$LDAP_TLS" = "TRUE" ] || [ "$LDAP_TLS" = "true" ]; then
+		setDovecotConf "tls" "yes" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CA_CERT"]; then
+		setDovecotConf "ca_cert_file" "$LDAP_TLS_CA_CERT" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CA_DIR" ]; then
+		setDovecotConf "ca_cert_dir" "$LDAP_TLS_CA_DIR" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CIPHER" ]; then
+		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CERT" ]; then
+		setDovecotConf "tls_cert_file" "$LDAP_TLS_CERT" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_KEY" ]; then
+		setDovecotConf "tls_key_file" "$LDAP_TLS_KEY" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_REQUIRE_CERT" ]; then
+		setDovecotConf "tls_require_cert" "$LDAP_TLS_REQUIRE_CERT" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CIPHER" ]; then
+		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_TLS_CIPHER" ]; then
+		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
+	fi
+
+	if [ -n "$LDAP_DEBUG_LEVEL" ]; then
+		setDovecotConf "debug_level" "$LDAP_DEBUG_LEVEL" /etc/dovecot/dovecot.conf
+	fi
+
+	if [ -n "$LDAP_USER_ATTRS" ]; then
+		setDovecotConf "user_attr" "$LDAP_USER_ATTRS" /etc/dovecot/dovecot.conf
+	fi
+
+    if [ -n "$LDAP_USER_FILTER" ]; then
+		setDovecotConf "user_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot.conf
+		setDovecotConf "pass_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot.conf
+	fi
+
+    	# Set LDAP conf: pass_attrs (ex: pass_attrs = uid=user,userPassword=password)
+	if [ -n "$LDAP_USER_FIELD" ]; then
+		setDovecotConf "pass_attrs" "$LDAP_USER_FIELD=user" /etc/dovecot/dovecot.conf
+	fi
+
+    # Set Logfile Parameters
+    	setDovecotConf "log_path" "$LOG_FILE" /etc/dovecot/dovecot.conf
+##
+## Logging verbosity and debugging.
+##
+
+# Log unsuccessful authentication attempts and the reasons why they failed.
+#auth_verbose = no
+
+# In case of password mismatches, log the attempted password. Valid values are
+# no, plain and sha1. sha1 can be useful for detecting brute force password
+# attempts vs. user simply trying the same password over and over again.
+# You can also truncate the value to n chars by appending ":n" (e.g. sha1:6).
+#auth_verbose_passwords = no
+
+# Even more verbose logging for debugging purposes. Shows for example SQL
+# queries.
+#auth_debug = no
+
+# In case of password mismatches, log the passwords and used scheme so the
+# problem can be debugged. Enabling this also enables auth_debug.
+#auth_debug_passwords = no
+
+# Enable mail process debugging. This can help you figure out why Dovecot
+# isn't finding your mails.
+#mail_debug = no
+
+
+    # Set Greeting
+    sed -i -e "/login_greeing/c\$GREETING_TEXT" /etc/dovecot/dovecot.conf
+    
+	# Set SSL resource paths
+	if [ -n "$SSL_KEY_PATH" ]; then
+		setDovecotConf "ssl_key" "<$SSL_KEY_PATH" /etc/dovecot/dovecot.conf
+	fi
+	if [ -n "$SSL_CERT_PATH" ]; then
+		setDovecotConf "ssl_cert" "<$SSL_CERT_PATH" /etc/dovecot/dovecot.conf
+	fi
+
+	### Dovecot Generate SSL
+
+	CERT_FOLDER="/etc/ssl/localcerts"
+	CSR_PATH="/tmp/imap.csr.pem"
+
+	if [ -n "$SSL_KEY_PATH" ]; then
+		KEY_PATH=$SSL_KEY_PATH
+	else
+		KEY_PATH="$CERT_FOLDER/imap.key.pem"
+	fi
+
+	if [ -n "$SSL_CERT_PATH" ]; then
+		CERT_PATH=$SSL_CERT_PATH
+	else
+		CERT_PATH="$CERT_FOLDER/imap.cert.pem"
+	fi
+
+	if [ ! -f $CERT_PATH ] || [ ! -f $KEY_PATH ]; then
+		mkdir -p $CERT_FOLDER
+
+	    echo "SSL Key or certificate not found. Generating self-signed certificates"
+	    openssl genrsa -out $KEY_PATH
+	    openssl req -new -key $KEY_PATH -out $CSR_PATH -subj "/CN=imap"
+	    openssl x509 -req -days 3650 -in $CSR_PATH -signkey $KEY_PATH -out $CERT_PATH
+	fi
+
+    ### Dovecot Loglevel
+     sed -i -e 's,#log_path = syslog,log_path = /dev/stderr,' \
+            -e 's,#info_log_path =,info_log_path = /dev/stdout,' \
+            -e 's,#debug_log_path =,debug_log_path = /dev/stdout,' \
+                                     /etc/dovecot/conf.d/10-logging.con
+
+
+	 # Change TLS/SSL dirs in default config and generate default certs
+	 sed -i -e 's,^ssl_cert =.*,ssl_cert = </etc/ssl/dovecot/server.pem,' \
+	           -e 's,^ssl_key =.*,ssl_key = </etc/ssl/dovecot/server.key,' \
+	        
+	 install -d /etc/ssl/dovecot
+	 openssl req -new -x509 -nodes -days 365 \
+	                -config /etc/dovecot/dovecot-openssl.cnf \
+	                -out /etc/ssl/dovecot/server.pem \
+	                -keyout /etc/ssl/dovecot/server.key
+	 chmod 0600 /etc/ssl/dovecot/server.key
+	 
+	 # Pregenerate Diffie-Hellman parameters (heavy operation)
+	 # to not consume time at container start
+	 mkdir -p /var/lib/dovecot 
+	/usr/libexec/dovecot/ssl-params 
+
+fi
+
+
+mkdir -p /tmp/state
+touch /tmp/state/20-dovecot-init
