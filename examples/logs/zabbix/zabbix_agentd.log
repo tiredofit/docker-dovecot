@@ -1,0 +1,90 @@
+    37:20170906:081253.566 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    37:20170906:081253.566 **** Enabled features ****
+    37:20170906:081253.566 IPv6 support:          YES
+    37:20170906:081253.566 TLS support:           YES
+    37:20170906:081253.566 **************************
+    37:20170906:081253.566 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    37:20170906:081253.566 agent #0 started [main process]
+   279:20170906:081253.566 agent #1 started [collector]
+   280:20170906:081253.566 agent #2 started [listener #1]
+   281:20170906:081253.567 agent #3 started [listener #2]
+   282:20170906:081253.567 agent #4 started [listener #3]
+   283:20170906:081253.567 agent #5 started [active checks #1]
+    37:20170906:081348.886 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    38:20170906:081408.689 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    38:20170906:081408.689 **** Enabled features ****
+    38:20170906:081408.689 IPv6 support:          YES
+    38:20170906:081408.689 TLS support:           YES
+    38:20170906:081408.689 **************************
+    38:20170906:081408.689 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    38:20170906:081408.689 agent #0 started [main process]
+   278:20170906:081408.689 agent #1 started [collector]
+   280:20170906:081408.690 agent #3 started [listener #2]
+   279:20170906:081408.690 agent #2 started [listener #1]
+   281:20170906:081408.690 agent #4 started [listener #3]
+   282:20170906:081408.690 agent #5 started [active checks #1]
+    38:20170906:081504.160 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    37:20170906:082522.471 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    37:20170906:082522.472 **** Enabled features ****
+    37:20170906:082522.472 IPv6 support:          YES
+    37:20170906:082522.472 TLS support:           YES
+    37:20170906:082522.472 **************************
+    37:20170906:082522.472 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    37:20170906:082522.472 agent #0 started [main process]
+   297:20170906:082522.472 agent #1 started [collector]
+   298:20170906:082522.472 agent #2 started [listener #1]
+   299:20170906:082522.472 agent #3 started [listener #2]
+   300:20170906:082522.472 agent #4 started [listener #3]
+   301:20170906:082522.473 agent #5 started [active checks #1]
+    37:20170906:082643.199 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    38:20170906:082932.872 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    38:20170906:082932.872 **** Enabled features ****
+    38:20170906:082932.872 IPv6 support:          YES
+    38:20170906:082932.872 TLS support:           YES
+    38:20170906:082932.872 **************************
+    38:20170906:082932.872 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    38:20170906:082932.873 agent #0 started [main process]
+   297:20170906:082932.873 agent #1 started [collector]
+   298:20170906:082932.873 agent #2 started [listener #1]
+   299:20170906:082932.873 agent #3 started [listener #2]
+   300:20170906:082932.873 agent #4 started [listener #3]
+   301:20170906:082932.873 agent #5 started [active checks #1]
+    38:20170906:083039.666 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    39:20170906:083348.874 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    39:20170906:083348.874 **** Enabled features ****
+    39:20170906:083348.874 IPv6 support:          YES
+    39:20170906:083348.874 TLS support:           YES
+    39:20170906:083348.874 **************************
+    39:20170906:083348.874 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    39:20170906:083348.874 agent #0 started [main process]
+   297:20170906:083348.874 agent #1 started [collector]
+   298:20170906:083348.874 agent #2 started [listener #1]
+   299:20170906:083348.875 agent #3 started [listener #2]
+   300:20170906:083348.875 agent #4 started [listener #3]
+   301:20170906:083348.875 agent #5 started [active checks #1]
+    39:20170906:091523.704 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    39:20170906:091556.243 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    39:20170906:091556.244 **** Enabled features ****
+    39:20170906:091556.244 IPv6 support:          YES
+    39:20170906:091556.244 TLS support:           YES
+    39:20170906:091556.244 **************************
+    39:20170906:091556.244 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    39:20170906:091556.244 agent #0 started [main process]
+   348:20170906:091556.244 agent #1 started [collector]
+   349:20170906:091556.244 agent #2 started [listener #1]
+   350:20170906:091556.244 agent #3 started [listener #2]
+   351:20170906:091556.244 agent #4 started [listener #3]
+   352:20170906:091556.244 agent #5 started [active checks #1]
+    39:20170906:091607.665 Zabbix Agent stopped. Zabbix 3.4.1 (revision 71734).
+    40:20170906:091712.325 Starting Zabbix Agent [dovecot-app]. Zabbix 3.4.1 (revision 71734).
+    40:20170906:091712.325 **** Enabled features ****
+    40:20170906:091712.325 IPv6 support:          YES
+    40:20170906:091712.325 TLS support:           YES
+    40:20170906:091712.325 **************************
+    40:20170906:091712.325 using configuration file: /etc/zabbix/zabbix_agentd.conf
+    40:20170906:091712.325 agent #0 started [main process]
+    54:20170906:091712.326 agent #1 started [collector]
+    55:20170906:091712.326 agent #2 started [listener #1]
+    56:20170906:091712.326 agent #3 started [listener #2]
+    57:20170906:091712.326 agent #4 started [listener #3]
+    58:20170906:091712.326 agent #5 started [active checks #1]

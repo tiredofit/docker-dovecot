@@ -7,7 +7,14 @@ LOG_FILE=${LOG_FILE:-"/var/log/dovecot.log"}
 LDAP_DEREF=${LDAP_DEFEF:-"never"}
 LDAP_SCOPE=${LDAP_SCOPE:-"subtree"}
 GREETING_TEXT=${GREETING_TEXT:-"Ready"}
-
+LOG_PATH={$LOG_PATH:-"/var/log/dovecot.log"}
+LOG_DEBUG_PATH={$LOG_DEBUG_PATH:-"/var/log/dovecot.debug.log"}
+LOG_INFO_PATH={$LOG_INFO_PATH:-"/dev/stdout"}
+LDAP_TLS_CRT_FILENAME=${LDAP_TLS_CRT_FILENAME:-"ldap.crt"}
+LDAP_TLS_KEY_FILENAME=${LDAP_TLS_KEY_FILENAME:-"ldap.key"}
+LDAP_TLS_CA_CRT=${LDAP_TLS_CA_CRT_FILENAME:-"ca.crt"}
+SSL_CRT_FILENAME=${SSL_CRT_FILENAME:-"mail.crt"}
+SSL_KEY_FILENAME=${SSL_KEY_FILENAME:-"mail.key"}
 
 
 ### Dovecot Configuration
@@ -19,7 +26,12 @@ GREETING_TEXT=${GREETING_TEXT:-"Ready"}
 		sed -i "s#^\s*$KEY\s*=.*\$#$KEY=$VALUE#g" $FILE
 	}
 
-	# Set LDAP conf: base (ex: base=dc=mail, dc=example, dc=org)
+    # Set Loglevel Dovecot Loglevel
+	setDovecotConf "log_path" "$LOG_PATH" /etc/dovecot/dovecot.conf
+	setDovecotConf "debug_log_path" "$LOG_DEBUG_PATH" /etc/dovecot/dovecot.conf
+	setDovecotConf "info_log_path" "$LOG_INFO_PATH" /etc/dovecot/dovecot.conf
+
+	# Set LDAP Host if Available
 	if [ -n "$LDAP_HOST" ]; then
 		setDovecotConf "hosts" "$LDAP_HOST" /etc/dovecot/dovecot.conf
 	fi
@@ -120,67 +132,73 @@ GREETING_TEXT=${GREETING_TEXT:-"Ready"}
 
 
     # Set Greeting
-    sed -i -e "/login_greeing/c\$GREETING_TEXT" /etc/dovecot/dovecot.conf
-    
-	# Set SSL resource paths
-	if [ -n "$SSL_KEY_PATH" ]; then
-		setDovecotConf "ssl_key" "<$SSL_KEY_PATH" /etc/dovecot/dovecot.conf
-	fi
-	if [ -n "$SSL_CERT_PATH" ]; then
-		setDovecotConf "ssl_cert" "<$SSL_CERT_PATH" /etc/dovecot/dovecot.conf
-	fi
+    setDovecotConf "login_greeting" "$GREETING_TEXT" /etc/dovecot/dovecot.conf
+	
+	## SSL Configuration
 
-	### Dovecot Generate SSL
 
-	CERT_FOLDER="/etc/ssl/localcerts"
-	CSR_PATH="/tmp/imap.csr.pem"
-
-	if [ -n "$SSL_KEY_PATH" ]; then
-		KEY_PATH=$SSL_KEY_PATH
-	else
-		KEY_PATH="$CERT_FOLDER/imap.key.pem"
+	if [ ! -f $SSL_CRT_FILENAME ] || [ ! -f SSL_KEY_FILENAME ]; then
+	    echo "** [dovecot] SSL Key or certificate not found. Generating self-signed certificates"
+		mkdir -p /assets/certs
+	    openssl genrsa -out /assets/certs/$SSL_KEY_FILENAME
+	    openssl req -new -key /assets/certs/$SSL_KEY_FILENAME -out /assets/certs/${SSL_CRT_FILENAME%.*}.csr -subj "/CN=dovecot"
+	    openssl x509 -req -days 3650 -in /assets/certs/${SSL_CRT_FILENAME%.*}.csr -signkey /assets/certs/$SSL_KEY_FILENAME -out /assets/certs/$SSL_CRT_FILENAME
 	fi
 
-	if [ -n "$SSL_CERT_PATH" ]; then
-		CERT_PATH=$SSL_CERT_PATH
-	else
-		CERT_PATH="$CERT_FOLDER/imap.cert.pem"
-	fi
+	setDovecotConf "ssl_cert" "</assets/certs/$SSL_KEY_FILENAME" /etc/dovecot/dovecot.conf
+	setDovecotConf "ssl_key" "</assets/certs/$SSL_CRT_FILENAME" /etc/dovecot/dovecot.conf
 
-	if [ ! -f $CERT_PATH ] || [ ! -f $KEY_PATH ]; then
-		mkdir -p $CERT_FOLDER
+    if [ ! -f "/assets/certs/server.pem" ] || [ ! -f "/assets/certs/server.pem" ]; then	        
+	 	    
+	 	    cat <<EOF > /tmp/openssl.cnf
+[ req ]
+default_bits = 1024
+encrypt_key = yes
+distinguished_name = req_dn
+x509_extensions = cert_type
+prompt = no
 
-	    echo "SSL Key or certificate not found. Generating self-signed certificates"
-	    openssl genrsa -out $KEY_PATH
-	    openssl req -new -key $KEY_PATH -out $CSR_PATH -subj "/CN=imap"
-	    openssl x509 -req -days 3650 -in $CSR_PATH -signkey $KEY_PATH -out $CERT_PATH
-	fi
+[ req_dn ]
+# country (2 letter code)
+C=XX
 
-    ### Dovecot Loglevel
-     sed -i -e 's,#log_path = syslog,log_path = /dev/stderr,' \
-            -e 's,#info_log_path =,info_log_path = /dev/stdout,' \
-            -e 's,#debug_log_path =,debug_log_path = /dev/stdout,' \
-                                     /etc/dovecot/conf.d/10-logging.con
+# State or Province Name (full name)
+ST=XX
 
+# Locality Name (eg. city)
+L=Test Server
 
-	 # Change TLS/SSL dirs in default config and generate default certs
-	 sed -i -e 's,^ssl_cert =.*,ssl_cert = </etc/ssl/dovecot/server.pem,' \
-	           -e 's,^ssl_key =.*,ssl_key = </etc/ssl/dovecot/server.key,' \
-	        
-	 install -d /etc/ssl/dovecot
-	 openssl req -new -x509 -nodes -days 365 \
-	                -config /etc/dovecot/dovecot-openssl.cnf \
-	                -out /etc/ssl/dovecot/server.pem \
-	                -keyout /etc/ssl/dovecot/server.key
-	 chmod 0600 /etc/ssl/dovecot/server.key
-	 
-	 # Pregenerate Diffie-Hellman parameters (heavy operation)
-	 # to not consume time at container start
-	 mkdir -p /var/lib/dovecot 
-	/usr/libexec/dovecot/ssl-params 
+# Organization (eg. company)
+O=Dovecot
 
+# Organizational Unit Name (eg. section)
+OU=IMAP server
+
+# Common Name (*.example.com is also possible)
+CN=imap.example.com
+
+# E-mail contact
+emailAddress=postmaster@example.com
+
+[ cert_type ]
+nsCertType = server	 	
+EOF
+
+	 	openssl req -new -x509 -nodes -days 365 \
+	                -config /tmp/openssl.cnf \
+	                -out /assets/certs/server.pem \
+	                -keyout /assets/certs/server.key
+	 	chmod 0600 /assets/certs/server.key
+	    rm -rf /tmp/openssl.cnf
 fi
+
+	if [ ! -f "/assets/certs/dhparams.pem" ]; then
+	    echo '** [dovecot] No Diffie Hellman Parameters Found. Generating, please wait..'
+		openssl gendh -out assets/certs/dhparam.pem 4096
+    fi
+
+
 
 
 mkdir -p /tmp/state
-touch /tmp/state/20-dovecot-init
+touch /tmp/state/10-dovecot-init

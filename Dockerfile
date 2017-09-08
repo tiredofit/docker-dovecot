@@ -2,24 +2,27 @@ FROM tiredofit/alpine:3.6
 MAINTAINER Dave Conroy <dave at tiredofit dot ca>
 
 ### Disable Features From Base Image
-ENV ENABLE_SMTP=false
+	ENV ENABLE_SMTP=false
 
 ### Install Dependencies
-RUN apk update && \
-    apk add \
-        dovecot \
-        dovecot-ldap \
-        && \
+	RUN apk update && \
+	    apk add \
+	        dovecot \
+	        dovecot-ldap \
+	        && \
 
-### Remove Dovecot Configuration Files
-    rm -rf /etc/dovecot/* && \
+
+### Setup Container for Dovecot
+	    rm -rf /etc/dovecot/* && \
+    	mkdir -p /var/lib/dovecot && \
+    	ln -s /assets/certs/dhparam.pem /var/lib/dovecot/ssl-parameters.dat && \
 
 ### Cleanup
-    rm -rf /var/cache/apk/* /usr/src/*
+	    rm -rf /var/cache/apk/* /usr/src/*
 
 
 ### Add Files
-ADD install /
+	ADD install /
 
 ### Networking Configuration
-EXPOSE 110 143 993 995
+	EXPOSE 110 143 993 995
