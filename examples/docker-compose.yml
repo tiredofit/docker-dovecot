@@ -6,13 +6,40 @@ services:
     image: tiredofit/dovecot
     container_name: dovecot-app
     volumes:
-    - ./data:/vmail
-    - ./certs:/certs
-    - ./logs:/var/log
+    - ./certs:/assets/certs
+    - ./data/vmail:/var/vmail
+    - ./data/db:/data
+    - ./logs/dovecot:/var/log/dovecot
     environment:
 
     - ZABBIX_HOSTNAME=dovecot-app
     - HOSTNAME=mail.example.com
+    - POSTMASTER=postmaster@mailhost.com
+
+    - AUTH_TYPE=mysql
+    - DB_HOST=dovecot-db
+    - DB_NAME=mail
+    - DB_USER=mail
+    - DB_PASS=password
+
+    - LDAP_HOST=ldap-host
+    - LDAP_BASE_DN=dc=example,dc=org
+    networks:
+      - proxy-tier
+    restart: always
+
+  dovecot-db:
+    image: tiredofit/mariadb
+    container_name: dovecot-db
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=mail
+      - MYSQL_USER=mail
+      - MYSQL_PASSWORD=password
+
+      - ZABBIX_HOSTNAME=dovecot-db
 
     networks:
       - proxy-tier

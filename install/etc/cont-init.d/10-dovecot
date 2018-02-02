@@ -1,110 +1,56 @@
 #!/usr/bin/with-contenv bash
 
 ### Set Defaults
+AUTH_TYPE=${AUTH_TYPE:-"SQLITE"}
+POSTMASTER=${POSTMASTER:-"postmaster@example.org"}
+HOSTNAME=${HOSTNAME:-"mail.example.org"}
 LOG_LEVEL=${LOG_LEVEL:-"INFO"}
-ENABLE_LDAP=${ENABLE_DOVECOT_LDAP:="FALSE"}
-LOG_FILE=${LOG_FILE:-"/var/log/dovecot.log"}
-LDAP_DEREF=${LDAP_DEFEF:-"never"}
-LDAP_SCOPE=${LDAP_SCOPE:-"subtree"}
+LOG_PATH=${LOG_PATH:-"/var/log/dovecot/dovecot.log"}
+LOG_DEBUG_PATH=${LOG_DEBUG_PATH:-"/var/log/dovecot/dovecot.debug.log"}
+LOG_INFO_PATH=${LOG_INFO_PATH:-"/dev/stdout"}
 GREETING_TEXT=${GREETING_TEXT:-"Ready"}
-LOG_PATH={$LOG_PATH:-"/var/log/dovecot.log"}
-LOG_DEBUG_PATH={$LOG_DEBUG_PATH:-"/var/log/dovecot.debug.log"}
-LOG_INFO_PATH={$LOG_INFO_PATH:-"/dev/stdout"}
 LDAP_TLS_CRT_FILENAME=${LDAP_TLS_CRT_FILENAME:-"ldap.crt"}
 LDAP_TLS_KEY_FILENAME=${LDAP_TLS_KEY_FILENAME:-"ldap.key"}
 LDAP_TLS_CA_CRT=${LDAP_TLS_CA_CRT_FILENAME:-"ca.crt"}
+LDAP_DEREF=${LDAP_DEFEF:-"never"}
+LDAP_SCOPE=${LDAP_SCOPE:-"subtree"}
 SSL_CRT_FILENAME=${SSL_CRT_FILENAME:-"mail.crt"}
 SSL_KEY_FILENAME=${SSL_KEY_FILENAME:-"mail.key"}
+PASS_SCHEME=${PASS_SCHEME:-"MD5-CRYPT"}
 
 
-### Dovecot Configuration
+### Config Helper
 	function setDovecotConf {
 		KEY="$1"
 		VALUE="$2"
 		FILE="$3"
 		echo "Setting conf: $KEY=$VALUE in ($FILE)"
-		sed -i "s#^\s*$KEY\s*=.*\$#$KEY=$VALUE#g" $FILE
+		sed -i -e "s#^\s*.$KEY\s*=.*\$#$KEY=$VALUE#g" $FILE
 	}
 
-    # Set Loglevel Dovecot Loglevel
+
+#### Create Vmail Dir
+	if [ ! -d "/var/vmail" ]; then
+		mkdir -p /var/vmail
+	fi
+	chown -R vmail:vmail /var/vmail
+
+#### Set Permissions
+    chown -R vmail:vmail /etc/dovecot/sieve
+    chmox +x /etc/dovecot/sieve/bin/*
+
+#### Set Hostname
+	setDovecotConf "hostname" "$HOSTNAME" /etc/dovecot/dovecot.conf
+	setDovecotConf "postmaster_address" "$POSTMASTER" /etc/dovecot/dovecot.conf
+
+#### Set Greeting
+    setDovecotConf "login_greeting" "$GREETING_TEXT" /etc/dovecot/dovecot.conf
+	
+#### Set Loglevel Dovecot Loglevel
 	setDovecotConf "log_path" "$LOG_PATH" /etc/dovecot/dovecot.conf
 	setDovecotConf "debug_log_path" "$LOG_DEBUG_PATH" /etc/dovecot/dovecot.conf
 	setDovecotConf "info_log_path" "$LOG_INFO_PATH" /etc/dovecot/dovecot.conf
 
-	# Set LDAP Host if Available
-	if [ -n "$LDAP_HOST" ]; then
-		setDovecotConf "hosts" "$LDAP_HOST" /etc/dovecot/dovecot.conf
-	fi
-
-    # Set LDAP conf: base (ex: base=dc=mail, dc=example, dc=org)
-	if [ -n "$LDAP_BASE_DN" ]; then
-		setDovecotConf "base" "$LDAP_BASE_DN" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_BIND_USER" ]; then
-		setDovecotConf "dn" "$LDAP_BIND_USER" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_BIND_PASS" ]; then
-		setDovecotConf "dnpass" "$LDAP_BIND_PASS" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ "$LDAP_TLS" = "TRUE" ] || [ "$LDAP_TLS" = "true" ]; then
-		setDovecotConf "tls" "yes" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CA_CERT"]; then
-		setDovecotConf "ca_cert_file" "$LDAP_TLS_CA_CERT" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CA_DIR" ]; then
-		setDovecotConf "ca_cert_dir" "$LDAP_TLS_CA_DIR" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CIPHER" ]; then
-		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CERT" ]; then
-		setDovecotConf "tls_cert_file" "$LDAP_TLS_CERT" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_KEY" ]; then
-		setDovecotConf "tls_key_file" "$LDAP_TLS_KEY" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_REQUIRE_CERT" ]; then
-		setDovecotConf "tls_require_cert" "$LDAP_TLS_REQUIRE_CERT" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CIPHER" ]; then
-		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_TLS_CIPHER" ]; then
-		setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot.conf
-	fi
-
-	if [ -n "$LDAP_DEBUG_LEVEL" ]; then
-		setDovecotConf "debug_level" "$LDAP_DEBUG_LEVEL" /etc/dovecot/dovecot.conf
-	fi
-
-	if [ -n "$LDAP_USER_ATTRS" ]; then
-		setDovecotConf "user_attr" "$LDAP_USER_ATTRS" /etc/dovecot/dovecot.conf
-	fi
-
-    if [ -n "$LDAP_USER_FILTER" ]; then
-		setDovecotConf "user_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot.conf
-		setDovecotConf "pass_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot.conf
-	fi
-
-    	# Set LDAP conf: pass_attrs (ex: pass_attrs = uid=user,userPassword=password)
-	if [ -n "$LDAP_USER_FIELD" ]; then
-		setDovecotConf "pass_attrs" "$LDAP_USER_FIELD=user" /etc/dovecot/dovecot.conf
-	fi
-
-    # Set Logfile Parameters
-    	setDovecotConf "log_path" "$LOG_FILE" /etc/dovecot/dovecot.conf
 ##
 ## Logging verbosity and debugging.
 ##
@@ -131,13 +77,170 @@ SSL_KEY_FILENAME=${SSL_KEY_FILENAME:-"mail.key"}
 #mail_debug = no
 
 
-    # Set Greeting
-    setDovecotConf "login_greeting" "$GREETING_TEXT" /etc/dovecot/dovecot.conf
-	
-	## SSL Configuration
+#### Auth Type Setup
+    case "$AUTH_TYPE" in
+
+      "MSYQL" | "mysql")
+			DB_PORT=${DB_PORT:-"3306"}
+		##### Check MySQL Connectivity			
+		    while true; do
+		      mysqlcmd='mysql -u'$DB_USER' -h'$DB_HOST' -p'$DB_PASS 
+		      out="`$mysqlcmd -e "SELECT COUNT(*) FROM information_schema.FILES;" 2>&1`"
+		      echo "$out" | grep -E "COUNT|Enter" 2>&1 > /dev/null
+		      if [ $? -eq 0 ]; then
+		        echo "** [dovecot] MySQL Database Connection Established"
+		        break
+		      fi
+		      echo "** [dovecot] MySQL Database Connection Not avilable, retrying.."
+		      sleep 2
+		    done
+
+		##### Update Dovecot SQL Configuration
+			cat <<EOF > /etc/dovecot/dovecot-sql.conf
+driver = mysql
+connect = host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER password=$DB_PASS
+default_pass_scheme = $PASS_SCHEME
+password_query = SELECT CONCAT(name, '@', '%d') AS user, password as password, home as userdb_home, 8 AS userdb_uid, 8 AS userdb_gid FROM users WHERE name = '%n' AND domain = '%d'
+user_query = SELECT home, 8 AS uid, 8 AS gid, concat('*:storage=', quota, 'M') AS quota_rule FROM users WHERE name = '%n' AND domain = '%d'
+EOF
+
+			sed -i -e "/connect = /c\connect = host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER password=$DB_PASS" /etc/dovecot/pigeonhole-sieve.dict
 
 
-	if [ ! -f $SSL_CRT_FILENAME ] || [ ! -f SSL_KEY_FILENAME ]; then
+		##### Check to see if Table Exists
+		    if [ $(mysql -N -s -u $DB_USER -p$DB_PASS -h $DB_HOST -e "select count(*) from information_schema.tables where table_schema='${DB_NAME}' and table_name='expires';") -eq 1 ]; then
+		        echo "** [dovecot] MySQL Config Database Tables exist"
+		    else
+		    echo "** [dovecot] No MySQL Config Database Tables exist! Creating.."
+		    mysql -u$DB_USER -h$DB_HOST -p$DB_PASS $DB_NAME</assets/dovecot/sql/schema.sql
+		    echo '** [dovecot] Database Configured to '$DB_HOST'/'$DB_NAME
+		fi	      
+
+		sed -i -e 's/##changeme##/sql/g' /etc/dovecot/dovecot.conf
+	      ;;
+
+	  "SQLITE" | "sqlite" | "SQLITE3" | "sqlite3")
+            mkdir -p /data/ 
+			cat <<EOF > /etc/dovecot/dovecot-sql.conf
+driver = sqlite
+connect = /data/auth.db
+password_query = SELECT password FROM user WHERE user.email = '%u'
+user_query = SELECT '*:bytes=' || user.quota_bytes AS quota_rule FROM user WHERE user.email = '%u'
+EOF
+			sed -i -e 's/##changeme##/sql/g' /etc/dovecot/dovecot.conf
+		  ;;
+
+    "PGSQL" | "pgsql" | "postgres" | "POSTGRES" | "postgresql" | "POSTGRESQL")
+	DB_PORT=${DB_PORT:-"5432"}
+
+		##### Check PgSQL Connectivity			
+		    while true; do
+		      pg_isready -q --host=$DB_HOST --user=$DB_USER --dbname=$DB_NAME 2>&1 > /dev/null
+		      if [ $? -eq 0 ]; then
+		        echo "** [dovecot] PgSQL Database Connection Established"
+		        break
+		      fi
+		      echo "** [dovecot] PgSQL Database Connection Not avilable, retrying.."
+		      sleep 2
+		    done
+
+			cat <<EOF > /etc/dovecot/dovecot-sql.conf
+driver = postgresql
+connect = host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER password=$DB_PASS
+default_pass_scheme = $PASS_SCHEME
+password_query = SELECT CONCAT(name, '@', '%d') AS user, password as password, home as userdb_home, 8 AS userdb_uid, 8 AS userdb_gid FROM users WHERE name = '%n' AND domain = '%d'
+user_query = SELECT home, 8 AS uid, 8 AS gid, concat('*:storage=', quota, 'M') AS quota_rule FROM users WHERE name = '%n' AND domain = '%d'
+EOF
+
+			sed -i -e "/connect = /c\connect = host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER password=$DB_PASS" /etc/dovecot/pigeonhole-sieve.dict
+
+		##### Check to see if Table Exists
+		    if [ $(mysql -N -s -u $DB_USER -p$DB_PASS -h $DB_HOST -e "select count(*) from information_schema.tables where table_schema='${DB_NAME}' and table_name='expires';") -eq 1 ]; then
+		        echo "** [dovecot] PgSQL Config Database Tables exist"
+		    else
+		    echo "** [dovecot] No PgSQL Config Database Tables exist! Creating.."
+		    pgsql --username=$DB_USER -h-host=$DB_HOST --password=$DB_PASS --dnname=$DB_NAME</assets/dovecot/sql/schema.sql
+		    echo '** [dovecot] Database Configured to '$DB_HOST'/'$DB_NAME    
+		    fi
+
+		    sed -i -e 's/##changeme##/sql/g' /etc/dovecot/dovecot.conf
+    	;;
+
+      "LDAP" | "ldap")
+	LDAP_PORT=${LDAP_PORT:-"389"}
+
+		if [ -n "$LDAP_HOST" ]; then
+			setDovecotConf "hosts" "$LDAP_HOST" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+		if [ -n "$LDAP_BASE_DN" ]; then
+			setDovecotConf "base" "$LDAP_BASE_DN" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_BIND_USER" ]; then
+			setDovecotConf "dn" "$LDAP_BIND_USER" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_BIND_PASS" ]; then
+			setDovecotConf "dnpass" "$LDAP_BIND_PASS" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ "$LDAP_TLS" = "TRUE" ] || [ "$LDAP_TLS" = "true" ]; then
+			setDovecotConf "tls" "yes" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_CA_CERT"]; then
+			setDovecotConf "ca_cert_file" "$LDAP_TLS_CA_CERT" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_CA_DIR" ]; then
+			setDovecotConf "ca_cert_dir" "$LDAP_TLS_CA_DIR" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_CIPHER" ]; then
+			setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_CERT" ]; then
+			setDovecotConf "tls_cert_file" "$LDAP_TLS_CERT" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_KEY" ]; then
+			setDovecotConf "tls_key_file" "$LDAP_TLS_KEY" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_REQUIRE_CERT" ]; then
+			setDovecotConf "tls_require_cert" "$LDAP_TLS_REQUIRE_CERT" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_TLS_CIPHER" ]; then
+			setDovecotConf "tls_cipher_suite" "$LDAP_TLS_CIPHER" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+		if [ -n "$LDAP_DEBUG_LEVEL" ]; then
+			setDovecotConf "debug_level" "$LDAP_DEBUG_LEVEL" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+		if [ -n "$LDAP_USER_ATTRS" ]; then
+			setDovecotConf "user_attr" "$LDAP_USER_ATTRS" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    if [ -n "$LDAP_USER_FILTER" ]; then
+			setDovecotConf "user_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot-ldap.conf
+			setDovecotConf "pass_filter" "($LDAP_USER_FIELD=%n)" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+	    	# Set LDAP conf: pass_attrs (ex: pass_attrs = uid=user,userPassword=password)
+		if [ -n "$LDAP_USER_FIELD" ]; then
+			setDovecotConf "pass_attrs" "$LDAP_USER_FIELD=user" /etc/dovecot/dovecot-ldap.conf
+		fi
+
+		sed -i -e 's/##changeme##/ldap/g' /etc/dovecot/dovecot.conf
+	    ;;
+    esac
+
+### SSL Configuration
+	if [ ! -f /assets/certs/$SSL_CRT_FILENAME ] || [ ! -f /assets/certs/$SSL_KEY_FILENAME ]; then
 	    echo "** [dovecot] SSL Key or certificate not found. Generating self-signed certificates"
 		mkdir -p /assets/certs
 	    openssl genrsa -out /assets/certs/$SSL_KEY_FILENAME
@@ -145,11 +248,10 @@ SSL_KEY_FILENAME=${SSL_KEY_FILENAME:-"mail.key"}
 	    openssl x509 -req -days 3650 -in /assets/certs/${SSL_CRT_FILENAME%.*}.csr -signkey /assets/certs/$SSL_KEY_FILENAME -out /assets/certs/$SSL_CRT_FILENAME
 	fi
 
-	setDovecotConf "ssl_cert" "</assets/certs/$SSL_KEY_FILENAME" /etc/dovecot/dovecot.conf
-	setDovecotConf "ssl_key" "</assets/certs/$SSL_CRT_FILENAME" /etc/dovecot/dovecot.conf
+	setDovecotConf "ssl_cert" "</assets/certs/$SSL_CRT_FILENAME" /etc/dovecot/dovecot.conf
+	setDovecotConf "ssl_key" "</assets/certs/$SSL_KEY_FILENAME" /etc/dovecot/dovecot.conf
 
-    if [ ! -f "/assets/certs/server.pem" ] || [ ! -f "/assets/certs/server.pem" ]; then	        
-	 	    
+    if [ ! -f "/assets/certs/server.pem" ] || [ ! -f "/assets/certs/server.key" ]; then	        
 	 	    cat <<EOF > /tmp/openssl.cnf
 [ req ]
 default_bits = 1024
@@ -190,12 +292,9 @@ EOF
 	                -keyout /assets/certs/server.key
 	 	chmod 0600 /assets/certs/server.key
 	    rm -rf /tmp/openssl.cnf
-fi
 
-	if [ ! -f "/assets/certs/dhparams.pem" ]; then
-	    echo '** [dovecot] No Diffie Hellman Parameters Found. Generating, please wait..'
-		openssl gendh -out assets/certs/dhparam.pem 4096
-    fi
+
+fi
 
 
 

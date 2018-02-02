@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rspamc -h rspamd:11334 "learn_$1" /dev/stdin <&0

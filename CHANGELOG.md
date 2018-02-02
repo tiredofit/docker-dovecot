@@ -1,4 +1,5 @@
-## 0.1 2017-09-06 Dave Conroy <dave at tiredofit.ca>
+## 0.1 2017-09-21 Dave Conroy <dave at tiredofit dot ca>
 
-* Initial _not working_ release
+* Initial Setup w/ Tested LDAP and LMTP
+
 
