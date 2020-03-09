@@ -34,10 +34,10 @@ services:
     volumes:
       - ./db:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=mail
-      - MYSQL_USER=mail
-      - MYSQL_PASSWORD=password
+      - ROOT_PASS=rootpassword
+      - DB_NAME=mail
+      - DB_USER=mail
+      - DB_PASS=password
 
       - ZABBIX_HOSTNAME=dovecot-db
 

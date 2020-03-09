@@ -1,0 +1,28 @@
+#!/usr/bin/with-contenv bash
+
+### Set Defaults
+AUTH_TYPE=${AUTH_TYPE:-"SQLITE"}
+POSTMASTER=${POSTMASTER:-"postmaster@example.org"}
+HOSTNAME=${HOSTNAME:-"mail.example.org"}
+LOG_LEVEL=${LOG_LEVEL:-"INFO"}
+LOG_PATH=${LOG_PATH:-"/var/log/dovecot/dovecot.log"}
+LOG_DEBUG_PATH=${LOG_DEBUG_PATH:-"/var/log/dovecot/dovecot.debug.log"}
+LOG_INFO_PATH=${LOG_INFO_PATH:-"/dev/stdout"}
+GREETING_TEXT=${GREETING_TEXT:-"Ready"}
+LDAP_TLS_CRT_FILENAME=${LDAP_TLS_CRT_FILENAME:-"ldap.crt"}
+LDAP_TLS_KEY_FILENAME=${LDAP_TLS_KEY_FILENAME:-"ldap.key"}
+LDAP_TLS_CA_CRT=${LDAP_TLS_CA_CRT_FILENAME:-"ca.crt"}
+LDAP_DEREF=${LDAP_DEFEF:-"never"}
+LDAP_SCOPE=${LDAP_SCOPE:-"subtree"}
+SSL_CRT_FILENAME=${SSL_CRT_FILENAME:-"mail.crt"}
+SSL_KEY_FILENAME=${SSL_KEY_FILENAME:-"mail.key"}
+PASS_SCHEME=${PASS_SCHEME:-"MD5-CRYPT"}
+
+### Config Helper
+function setDovecotConf {
+	KEY="$1"
+	VALUE="$2"
+	FILE="$3"
+	echo "Setting conf: $KEY=$VALUE in ($FILE)"
+	sed -i -e "s#^\s*.$KEY\s*=.*\$#$KEY=$VALUE#g" $FILE
+}

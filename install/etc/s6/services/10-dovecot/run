@@ -1,14 +1,12 @@
 #!/usr/bin/with-contenv bash
 
-while [ ! -f /tmp/state/10-dovecot-init ]
-do
-  sleep 1
-done
+for s in /assets/functions/*; do source $s; done
+PROCESS_NAME="dovecot"
+output_off
+check_container_initialized
+check_service_initialized init
+liftoff
+output_on
 
-if [ ! -f /tmp/state/10-dovecot ]; then
-  echo 'Initialization Complete' >/tmp/state/10-Dovecot
-fi
-
-echo ''
-echo '** Starting Dovecot'
-exec dovecot -F
+print_info "Starting Dovecot"
+dovecot -F
